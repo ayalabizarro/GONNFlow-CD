@@ -1,0 +1,135 @@
+@page "/lhs"
+@using System.Globalization
+
+<PageTitle>LHS Sampler</PageTitle>
+
+<h3 class="mb-3">GONNFlow-CD: Latin Hypercube Sampling (LHS)</h3>
+
+<div class="card p-3 mb-4 space-y-2" style="max-width: 880px;">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label class="form-label">Valor inicial (a)</label>
+            <input class="form-control" type="number" step="any" @bind-value="A" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label">Valor final (b)</label>
+            <input class="form-control" type="number" step="any" @bind-value="B" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label">Muestras (n)</label>
+            <input class="form-control" type="number" min="1" @bind-value="N" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label">Semilla (opcional)</label>
+            <input class="form-control" type="number" @bind-value="Seed" />
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mt-3">
+        <button class="btn btn-primary" @onclick="Generate">Generar</button>
+        <button class="btn btn-secondary" @onclick="Clear" disabled="@(!Rows.Any())">Limpiar</button>
+        <div class="ms-auto text-muted">
+            Fórmula: H<sub>j</sub> = a + ((j−1)+u<sub>j</sub>)/n · (b−a)
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-danger mt-3">@Error</div>
+    }
+
+    @if (Rows.Any())
+    {
+        <div class="mt-3">
+            <div class="mb-2">
+                <strong>Rango Δ =</strong> @Delta().ToString("0.########", Invariant)
+                <span class="ms-3"><strong>a =</strong> @A</span>
+                <span class="ms-3"><strong>b =</strong> @B</span>
+                <span class="ms-3"><strong>n =</strong> @N</span>
+                @if (Seed.HasValue)
+                {
+                    <span class="ms-3"><strong>semilla =</strong> @Seed</span>
+                }
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>j</th>
+                            <th>L<sub>i</sub></th>
+                            <th>L<sub>j</sub></th>
+                            <th>u<sub>j</sub></th>
+                            <th>H</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Rows)
+                        {
+                            <tr>
+                                <td>@r.J</td>
+                                <td>@r.Li.ToString("0.########", Invariant)</td>
+                                <td>@r.Lj.ToString("0.########", Invariant)</td>
+                                <td>@r.U.ToString("0.########", Invariant)</td>
+                                <td>@r.H.ToString("0.########", Invariant)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // ---- Parámetros y estado ----
+    private double A { get; set; } = 0.05;
+    private double B { get; set; } = 0.40;
+    private int N { get; set; } = 10;
+    private int? Seed { get; set; } = 124523; // deja null para aleatorio no reproducible
+    private string? Error { get; set; }
+    private List<Row> Rows { get; set; } = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    // ---- Lógica LHS ----
+    private void Generate()
+    {
+        Error = null;
+        Rows.Clear();
+
+        if (N < 1) { Error = "El número de muestras (n) debe ser ≥ 1."; return; }
+        if (B <= A) { Error = "Se requiere b > a."; return; }
+
+        var delta = Delta();
+        var rng = Seed.HasValue ? new Random(Seed.Value) : new Random();
+
+        for (int j = 1; j <= N; j++)
+        {
+            // Estratos equiprobables:
+            double Li = A + ((j - 1) / (double)N) * delta;
+            double Lj = A + (j / (double)N) * delta;
+
+            // u_j ~ U(0,1)
+            double u = rng.NextDouble(); // en [0,1)
+            // Fórmula LHS
+            double H = A + (((j - 1) + u) / N) * delta;
+
+            // Seguridad numérica: clamp por si hay redondeo extremo
+            if (H < Li) H = Li;
+            if (H >= Lj) H = BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(Lj) - 1); // H < Lj
+
+            Rows.Add(new Row(j, Li, Lj, u, H));
+        }
+    }
+
+    private void Clear()
+    {
+        Rows.Clear();
+        Error = null;
+    }
+
+    private double Delta() => B - A;
+
+    // ---- Modelo para la tabla ----
+    private record Row(int J, double Li, double Lj, double U, double H);
+}

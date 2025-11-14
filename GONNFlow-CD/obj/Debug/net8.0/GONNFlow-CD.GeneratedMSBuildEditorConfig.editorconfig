@@ -1,0 +1,59 @@
+is_global = true
+build_property.EnableAotAnalyzer = 
+build_property.EnableSingleFileAnalyzer = 
+build_property.EnableTrimAnalyzer = false
+build_property.IncludeAllContentForSelfExtract = 
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = false
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = browser
+build_property.RootNamespace = GONNFlow-CD
+build_property.RootNamespace = GONNFlow-CD
+build_property.ProjectDir = /Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = false
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = /Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD
+build_property._RazorSourceGeneratorDebug = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/App.razor]
+build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Pages/Debris.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvRGVicmlzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Pages/GCI.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvR0NJLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Pages/Home.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSG9tZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Pages/LHS.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTEhTLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Pages/Weather.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2VhdGhlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Layout/MainLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L01haW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-c52y3o9nvl
+
+[/Users/ivan/Library/Mobile Documents/com~apple~CloudDocs/AB_Doctorado_Tesis/04.-Programas/GONNFlow-CD/GONNFlow-CD/Layout/NavMenu.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L05hdk1lbnUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-1zdv1tuz65

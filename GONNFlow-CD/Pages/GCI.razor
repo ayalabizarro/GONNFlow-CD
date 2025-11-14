@@ -1,0 +1,204 @@
+@page "/gci"
+
+<PageTitle>GONNFlow-CD:: GCI Calculator</PageTitle>
+
+<div class="container py-4">
+  <h2 class="gf-min-title mb-2">Grid Convergence Index (GCI)</h2>
+  <p class="text-muted mb-3">
+    Implementación basada en <strong>Roache (1994, 1998)</strong>. Calcula r<sub>12</sub>, r<sub>23</sub>, orden <em>p</em>,
+    extrapolación de Richardson, errores relativos y GCI entre pares, y verifica el régimen asintótico.
+  </p>
+
+  <div class="gf-min-divider mb-4"></div>
+
+  <!-- INPUTS -->
+  <div class="card p-3 mb-4 shadow-sm">
+    <h5 class="mb-3">Entradas</h5>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">f<sub>gruesa</sub> (f₁)</label>
+        <input type="number" class="form-control" @bind="f1" step="any" placeholder="1.4812" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">f<sub>media</sub> (f₂)</label>
+        <input type="number" class="form-control" @bind="f2" step="any" placeholder="1.4951" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">f<sub>fina</sub> (f₃)</label>
+        <input type="number" class="form-control" @bind="f3" step="any" placeholder="1.5000" />
+      </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">N₁ (malla gruesa)</label>
+        <input type="number" class="form-control" @bind="n1" step="any" placeholder="9600" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">N₂ (malla media)</label>
+        <input type="number" class="form-control" @bind="n2" step="any" placeholder="14000" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">N₃ (malla fina)</label>
+        <input type="number" class="form-control" @bind="n3" step="any" placeholder="19800" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Dimensión (1D–3D)</label>
+        <select class="form-select" @bind="dimension">
+          <option value="1">1D</option>
+          <option value="2">2D</option>
+          <option value="3" selected>3D</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">F<sub>s</sub></label>
+        <select class="form-select" @bind="Fs">
+          <option value="1.25" selected>1.25 (3 mallas)</option>
+          <option value="3.0">3.0 (2 mallas)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Tolerancia régimen asintótico</label>
+        <input type="number" class="form-control" @bind="asympTol" step="any" placeholder="0.2" />
+      </div>
+    </div>
+
+    <button class="btn btn-primary mt-3" @onclick="ComputeAll">Calcular</button>
+  </div>
+
+  @if (computed)
+  {
+    <div class="card p-3 shadow-sm mb-4 border-success">
+      <h5 class="text-success mb-2">Resultados</h5>
+
+      <div class="row">
+        <div class="col-md-6">
+          <ul class="mb-0">
+            <li><strong>r₁₂:</strong> @r12.ToString("0.######")</li>
+            <li><strong>r₂₃:</strong> @r23.ToString("0.######")</li>
+            <li><strong>r̄ (media geom.):</strong> @rbar.ToString("0.######")</li>
+            <li><strong>Orden observado p:</strong> @p.ToString("0.####")</li>
+            <li><strong>Extrapolación f*:</strong> @fExtrap.ToString("0.######")</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="mb-0">
+            <li><strong>ε₂₃ = |f₃−f₂|/|f₃|:</strong> @(eps23*100).ToString("0.0000") %</li>
+            <li><strong>ε₁₂ = |f₂−f₁|/|f₂|:</strong> @(eps12*100).ToString("0.0000") %</li>
+            <li><strong>GCI₂₃ (medio–fino):</strong> @(GCI23*100).ToString("0.0000") %</li>
+            <li><strong>GCI₁₂ (grueso–medio):</strong> @(GCI12*100).ToString("0.0000") %</li>
+            <li><strong>Chequeo asintótico:</strong> @asympRatio.ToString("0.0000")
+              @if (IsAsymptotic) { <span class="badge text-bg-success ms-1">OK</span> }
+              else { <span class="badge text-bg-warning ms-1">Revisar</span> }
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-2 small text-muted">
+        Criterio: asintótico si <code>GCI₁₂ / (GCI₂₃ · r₂₃^p)</code> ≈ 1 (se acepta 1 ± @asympTol.ToString("0.00")).
+      </div>
+    </div>
+
+    <div class="card p-3 bg-light border-light shadow-sm">
+      <h6 class="fw-semibold">Interpretación</h6>
+      <p class="mb-1">• <strong>Monotonicidad:</strong> @monotonicMsg</p>
+      <p class="mb-1">• <strong>Orden p:</strong> @pInterp</p>
+      <p class="mb-0">• <strong>Recomendación:</strong> @recommendation</p>
+    </div>
+  }
+</div>
+
+@code {
+  // Inputs
+  double f1, f2, f3;     // soluciones: gruesa, media, fina
+  double n1, n2, n3;     // nº de celdas (o tamaños de celda)
+  int dimension = 3;     // 1/2/3
+  double Fs = 1.25;
+  double asympTol = 0.20;
+
+  // Outputs
+  double r12, r23, rbar, p, fExtrap;
+  double eps12, eps23, GCI12, GCI23, asympRatio;
+  bool IsAsymptotic, computed;
+  string monotonicMsg = "", pInterp = "", recommendation = "";
+
+  // === Valores por defecto al cargar la página ===
+  protected override void OnInitialized()
+  {
+      // Trío validado para J (9600, 14000, 19800)
+      f1 = 1.4812;  // J gruesa (9600)
+      f2 = 1.4951;  // J media  (14000)
+      f3 = 1.5000;  // J fina   (19800)
+
+      n1 = 9600;
+      n2 = 14000;
+      n3 = 19800;
+
+      dimension = 3;
+      Fs = 1.25;
+      asympTol = 0.20;
+
+      ComputeAll(); // calcula automáticamente al abrir
+  }
+
+  // Cargar ejemplo manualmente (botón)
+  void LoadDefaults()
+  {
+      f1 = 1.4812; f2 = 1.4951; f3 = 1.5000;
+      n1 = 9600;   n2 = 14000;  n3 = 19800;
+      dimension = 3; Fs = 1.25; asympTol = 0.20;
+      ComputeAll();
+  }
+
+  void ComputeAll()
+  {
+    computed = false;
+    monotonicMsg = pInterp = recommendation = "";
+
+    if (!(n1 > 0 && n2 > 0 && n3 > 0) || dimension < 1 || dimension > 3)
+    {
+      recommendation = "Verifica N₁, N₂, N₃ (>0) y la dimensión (1–3).";
+      computed = true; return;
+    }
+
+    double expDim = 1.0 / dimension;
+    r12 = Math.Pow(n2 / n1, expDim);
+    r23 = Math.Pow(n3 / n2, expDim);
+    rbar = Math.Sqrt(r12 * r23);
+
+    monotonicMsg = ((f1 <= f2 && f2 <= f3) || (f1 >= f2 && f2 >= f3)) ? "monotónica (OK)" : "no monotónica";
+
+    double ratio = (f3 - f2) / (f2 - f1);
+    p = (ratio == 0 || rbar <= 1.0) ? double.NaN : Math.Abs(Math.Log(Math.Abs(ratio)) / Math.Log(rbar));
+
+    double denom23 = Math.Pow(r23, p) - 1.0;
+    fExtrap = (double.IsNaN(p) || Math.Abs(denom23) < 1e-14) ? double.NaN : f3 + (f3 - f2) / denom23;
+
+    eps23 = Math.Abs(f3 - f2) / Math.Max(Math.Abs(f3), 1e-300);
+    eps12 = Math.Abs(f2 - f1) / Math.Max(Math.Abs(f2), 1e-300);
+    GCI23 = Fs * Math.Abs(f3 - f2) / (Math.Max(Math.Abs(f3), 1e-300) * (Math.Pow(r23, p) - 1.0));
+    GCI12 = Fs * Math.Abs(f2 - f1) / (Math.Max(Math.Abs(f2), 1e-300) * (Math.Pow(r12, p) - 1.0));
+
+    double rp = Math.Pow(r23, p);
+    asympRatio = (GCI23 == 0 || double.IsNaN(GCI23)) ? double.NaN : GCI12 / (GCI23 * rp);
+    IsAsymptotic = !double.IsNaN(asympRatio) && asympRatio >= (1 - asympTol) && asympRatio <= (1 + asympTol);
+
+    pInterp = double.IsNaN(p) ? "no evaluable" :
+              p < 0.9 ? "pobre / no asintótica" :
+              p < 1.5 ? "orden ~1 (lenta)" :
+              p < 3.0 ? "orden moderado" :
+                        "orden alto (asintótico probable)";
+
+    recommendation =
+      (!double.IsNaN(GCI23) && GCI23 * 100 < 1 && IsAsymptotic) ? "Malla fina aceptable para producción (GCI₂₃ < 1% y asintótico)." :
+      (!double.IsNaN(GCI23) && GCI23 * 100 < 5 && IsAsymptotic) ? "Malla fina aceptable; si el caso es crítico, evaluar un refinamiento adicional." :
+      "No claramente asintótico o GCI alto; conviene revisar/añadir malla intermedia.";
+
+    computed = true;
+  }
+}

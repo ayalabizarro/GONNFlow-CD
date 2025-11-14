@@ -1,0 +1,225 @@
+﻿@page "/debris"
+
+<PageTitle>DebrisInterMixingFoam Parameters</PageTitle>
+
+@using System.ComponentModel.DataAnnotations
+
+<h3 class="mb-3">GONNFlow-CD: Parámetros DebrisInterMixingFoam</h3>
+<p>Ingresa los parámetros básicos y obtén <em>τ₀</em> (Yu), <em>τ<sub>y</sub></em>, <code>tau0</code> (cinemático), y magnitudes relacionadas. Pensado para integrarse en <strong>GONNFlow-CD</strong>.</p>
+
+<EditForm Model="model" OnValidSubmit="Compute">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <fieldset style="border:1px solid #ddd;padding:1rem;border-radius:8px;margin-bottom:1rem;">
+        <legend><strong>Entradas básicas</strong></legend>
+        <div class="grid" style="display:grid;grid-template-columns:repeat(2, minmax(220px, 1fr));gap:0.75rem;">
+            <div>
+                <label>ρ (rhoF) [kg/m³]</label>
+                <InputNumber @bind-Value="model.Rho" class="form-control" />
+            </div>
+            <div>
+                <label>τ₀₀ (tau00) [Pa] — calibrable</label>
+                <InputNumber @bind-Value="model.Tau00" class="form-control" />
+            </div>
+            <div>
+                <label>C (Cv) [fracción volumétrica de sólidos 0–1]</label>
+                <InputNumber @bind-Value="model.Cv" class="form-control" />
+            </div>
+            <div>
+                <label>ξ (xi) [–] (recomendado 5)</label>
+                <InputNumber @bind-Value="model.Xi" class="form-control" />
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset style="border:1px solid #ddd;padding:1rem;border-radius:8px;margin-bottom:1rem;">
+        <legend><strong>Definición de P₀</strong></legend>
+        <div>
+            <input type="checkbox" @bind="model.UseMineralFractions" />
+            <label style="margin-left:0.5rem;">Calcular P₀ a partir de fracciones minerales en volumen (sobre <em>todos</em> los sólidos)</label>
+        </div>
+
+        @if (model.UseMineralFractions)
+        {
+            <div class="grid" style="display:grid;grid-template-columns:repeat(3, minmax(200px, 1fr));gap:0.75rem;margin-top:0.5rem;">
+                <div>
+                    <label>C_kaol+clor [0–1]</label>
+                    <InputNumber @bind-Value="model.C_kaol_clor" class="form-control" />
+                </div>
+                <div>
+                    <label>C_illita [0–1]</label>
+                    <InputNumber @bind-Value="model.C_illita" class="form-control" />
+                </div>
+                <div>
+                    <label>C_montmorillonita [0–1]</label>
+                    <InputNumber @bind-Value="model.C_mont" class="form-control" />
+                </div>
+            </div>
+            <p style="margin-top:0.4rem;">Fórmula: <code>P0 = C_kaol+clor + 1.3*C_illita + 1.7*C_mont</code></p>
+        }
+        else
+        {
+            <div style="margin-top:0.4rem;">
+                <label>P₀ (P0v) [–]</label>
+                <InputNumber @bind-Value="model.P0" class="form-control" />
+            </div>
+        }
+    </fieldset>
+
+    <fieldset style="border:1px solid #ddd;padding:1rem;border-radius:8px;margin-bottom:1rem;">
+        <legend><strong>Parámetros reológicos opcionales</strong></legend>
+        <div class="grid" style="display:grid;grid-template-columns:repeat(3, minmax(200px, 1fr));gap:0.75rem;">
+            <div>
+                <label>k [Pa·sⁿ] (consistencia, opcional)</label>
+                <InputNumber @bind-Value="model.k" class="form-control" />
+            </div>
+            <div>
+                <label>n [–] (exponente HB)</label>
+                <InputNumber @bind-Value="model.n" class="form-control" />
+            </div>
+            <div>
+                <label>γ̇ [1/s] (shear rate para μ(γ̇))</label>
+                <InputNumber @bind-Value="model.gammaDot" class="form-control" />
+            </div>
+        </div>
+    </fieldset>
+
+    <button class="btn btn-primary" type="submit">Calcular</button>
+</EditForm>
+
+@if (results is not null)
+{
+    <div style="margin-top:1rem;display:grid;grid-template-columns:repeat(2, minmax(280px, 1fr));gap:1rem;">
+    <div style="border:1px solid #eee;padding:0.8rem;border-radius:8px;">
+        <h3>Resultados principales</h3>
+        <ul>
+            <li>P₀ = <strong>@($"{results.P0:F6}")</strong> [–]</li>
+            <li>P₁ = <strong>@($"{results.P1:F6}")</strong> [–]</li>
+            <li>τ₀ (Yu) = <strong>@($"{results.Tau0Yu:F6}")</strong> Pa</li>
+            <li>τ<sub>y</sub> = <strong>@($"{results.TauY:F6}")</strong> Pa</li>
+            <li><code>tau0</code> (cinemático) = <strong>@($"{results.Tau0Kinematic:F6}")</strong> m²/s²</li>
+        </ul>
+    </div>
+    <div style="border:1px solid #eee;padding:0.8rem;border-radius:8px;">
+        <h3>Viscosidad aparente (opcional)</h3>
+        <p>Modelo HB por trozos:</p>
+        <ul>
+            <li>μ(γ̇) = τ<sub>y</sub>/γ̇ + k·γ̇<sup>n−1</sup> (si γ̇&gt;0)</li>
+            <li>μ₀ límite (si τ&lt;τ<sub>y</sub>) — aquí no se evalúa; use it como referencia numérica.</li>
+        </ul>
+        <p>Con γ̇ = @model.gammaDot 1/s → μ(γ̇) = <strong>@($"{results.MuApparent:F6}")</strong> Pa·s</p>
+    </div>
+</div>
+
+
+    <div style="margin-top:0.5rem;color:#666;font-size:0.9rem;">
+        <p>Ecuaciones: τ<sub>y</sub> = τ₀·C²·e^{22·C·P₁};
+            P₁ = P₀ (P₀≤0.27) ó 0.7·P₀ (P₀&gt;0.27);
+            τ₀ = τ₀₀·e^{ξ·(C−0.47)} si C&gt;0.47 (si no, τ₀=τ₀₀);
+            <code>tau0</code> = τ<sub>y</sub>/ρ.</p>
+    </div>
+}
+
+@code {
+    private Model model = new()
+    {
+        Rho = 1803,
+        Tau00 = 41.333,
+        Cv = 0.48643,
+        Xi = 5,
+        P0 = 0.08743,
+        k = 0.004505,
+        n = 0.34,
+        gammaDot = 10
+    };
+
+    private Results? results;
+
+    private void Compute()
+    {
+        // 1) P0: directo o desde fracciones minerales
+        double p0 = model.UseMineralFractions
+            ? Math.Max(0.0, model.C_kaol_clor + 1.3 * model.C_illita + 1.7 * model.C_mont)
+            : model.P0;
+
+        // 2) P1
+        double p1 = p0 <= 0.27 ? p0 : 0.7 * p0;
+
+        // 3) tau0 (Yu)
+        double tau0Yu = model.Cv > 0.47
+            ? model.Tau00 * Math.Exp(model.Xi * (model.Cv - 0.47))
+            : model.Tau00;
+
+        // 4) tau_y
+        double tauY = tau0Yu * Math.Pow(model.Cv, 2.0) * Math.Exp(22.0 * model.Cv * p1);
+
+        // 5) tau0 cinemático (lo que se guarda en transportProperties)
+        double tau0Kin = tauY / model.Rho; // m^2/s^2
+
+        // 6) Viscosidad aparente HB (si hay gammaDot>0)
+        double muApp = 0.0;
+        if (model.gammaDot > 0)
+        {
+            muApp = (tauY / model.gammaDot) + model.k * Math.Pow(model.gammaDot, model.n - 1.0);
+        }
+
+        results = new Results
+        {
+            P0 = p0,
+            P1 = p1,
+            Tau0Yu = tau0Yu,
+            TauY = tauY,
+            Tau0Kinematic = tau0Kin,
+            MuApparent = muApp
+        };
+    }
+
+    public class Model
+    {
+        [Range(1, 5000)]
+        public double Rho { get; set; } = 1800; // kg/m3
+
+        [Range(0.0, 1e6)]
+        public double Tau00 { get; set; } = 30; // Pa
+
+        [Range(0.0, 1.0)]
+        public double Cv { get; set; } = 0.5; // fracción volumétrica de sólidos
+
+        [Range(0.0, 50.0)]
+        public double Xi { get; set; } = 5; // empírico
+
+        // P0 directo
+        [Range(0.0, 1.0)]
+        public double P0 { get; set; } = 0.1; // adimensional
+
+        // Alternativa: P0 desde fracciones minerales
+        public bool UseMineralFractions { get; set; } = false;
+        [Range(0.0, 1.0)] public double C_kaol_clor { get; set; } = 0.05;
+        [Range(0.0, 1.0)] public double C_illita { get; set; } = 0.02;
+        [Range(0.0, 1.0)] public double C_mont { get; set; } = 0.016;
+
+        // Reología opcional para μ(γ̇)
+        [Range(0.0, 1e3)] public double k { get; set; } = 0.004505; // Pa·s^n
+        [Range(0.0, 3.0)] public double n { get; set; } = 0.34; // –
+        [Range(0.0, 1e4)] public double gammaDot { get; set; } = 10; // 1/s
+    }
+
+    public class Results
+    {
+        public double P0 { get; set; }
+        public double P1 { get; set; }
+        public double Tau0Yu { get; set; }
+        public double TauY { get; set; }
+        public double Tau0Kinematic { get; set; } // m^2/s^2
+        public double MuApparent { get; set; } // Pa·s
+    }
+}
+
+@* ========== Notas de integración ==========
+1) Copia este fichero como `Pages/HBYuCalculator.razor` dentro de tu proyecto Blazor (WASM o Server).
+2) Asegúrate de tener Bootstrap o estilos equivalentes (opcional). Si no, funciona igual.
+3) Agrega la ruta al menú/nav: <NavLink href="/hb-yu-calculator">HB–Yu Calculator</NavLink>.
+4) Todos los cálculos siguen:  τ_y = τ_0 C^2 exp(22 C P1);  P1 = P0 (P0<=0.27) o 0.7 P0;  τ_0 = τ_00 exp(ξ (C-0.47)) si C>0.47;  `tau0`(kin) = τ_y/ρ.
+5) Validar que Cv sea fracción volumétrica (no másico); P0 adimensional definido sobre el volumen de todos los sólidos.
+*@
